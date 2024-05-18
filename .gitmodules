@@ -1,3 +1,6 @@
 [submodule "dishdash-server"]
 	path = dishdash-server
 	url = https://github.com/shampiniony/dishdash-server.git
+[submodule "dish-dash-frontend"]
+	path = dish-dash-frontend
+	url = https://github.com/shampiniony/dish-dash-frontend.git
