@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  go-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - database
+    restart: unless-stopped
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  database:
+    restart: unless-stopped
+    image: postgres:15
+    container_name: database
+    volumes:
+      - ./migrations:/docker-entrypoint-initdb.d
+      - ~/.pg/dishdash-db:/var/lib/postgresql/data
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "1000:8080"
+    depends_on:
+      - database
