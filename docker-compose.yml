@@ -7,26 +7,30 @@ services:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
+      - "--log.level=DEBUG"
+      - "--api.dashboard=true"
     ports:
       - "80:80"      
       - "8080:8080" 
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     networks:
-      - webnet
+      - traefik
   frontend:
     build:
       context: ./dish-dash-frontend
       dockerfile: Dockerfile
     labels:
-      - "traefik.http.routers.frontend.rule=Host(`localhost`)"
+      - "traefik.enable=true"
       - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+      - "traefik.http.routers.frontend.priority=1"
     ports:
       - "3000:3000"
     networks:
-      - webnet
+      - traefik
       
 
-
 networks:
-  webnet:
+  traefik:
