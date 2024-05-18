@@ -8,7 +8,6 @@ services:
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
       - "--log.level=DEBUG"
-      - "--api.dashboard=true"
     ports:
       - "80:80"      
       - "8080:8080" 
@@ -30,6 +29,52 @@ services:
       - "3000:3000"
     networks:
       - traefik
+  go-backend:
+    build:
+      context: ./dishdash-server
+      dockerfile: Dockerfile
+    container_name: go-backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.go-backend.entrypoints=web"
+      - "traefik.http.routers.go-backend.rule=PathPrefix(`/api`)"
+      - "traefik.http.services.go-backend.loadbalancer.server.port=8000"
+      - "traefik.http.routers.go-backend.priority=10"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - database
+    restart: unless-stopped
+    env_file:
+      - .env
+
+  database:
+    restart: unless-stopped
+    image: postgres:15
+    container_name: database
+    volumes:
+      - ./dishdash-server/migrations:/docker-entrypoint-initdb.d
+      - ~/.pg/dishdash-db:/var/lib/postgresql/data
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "1000:8080"
+    depends_on:
+      - database
       
 
 networks:
