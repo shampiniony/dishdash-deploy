@@ -3,7 +3,7 @@ version: "3.8"
 services:
   go-backend:
     build:
-      context: ./dishdash-server
+      context: .
       dockerfile: Dockerfile
     container_name: go-backend
     depends_on:

@@ -1,29 +1,9 @@
 version: '3.8'
 
 services:
-  reverse-proxy:
-    image: traefik:2.7
-    container_name: traefik
-    command: 
-      - "--providers.docker"
-      - "--entrypoints.web.address=:80"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=proxynet"
-      - "--log.level=DEBUG"
-      - "--api.insecure=true"
-    ports:
-      - "80:80"
-      - "8080:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-      - go-backend
-    networks:
-      - proxynet
-    
   frontend:
     build:
-      context: ./dish-dash-frontend
+      context: .
       dockerfile: Dockerfile
     labels:
       - "traefik.enable=true"
@@ -35,3 +15,8 @@ services:
       - "3000:3000"
     networks:
       - proxynet
+
+networks:
+  proxynet:
+    name: proxynet
+    external: true
