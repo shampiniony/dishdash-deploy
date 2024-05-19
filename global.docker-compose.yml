@@ -1,20 +1,26 @@
 version: '3.8'
 
 services:
-  traefik:
-    image: traefik:v2.7
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
+  reverse-proxy:
+    image: traefik:2.7
+    container_name: traefik
+    command: 
+      - "--providers.docker"
       - "--entrypoints.web.address=:80"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=proxynet"
       - "--log.level=DEBUG"
+      - "--api.insecure=true"
     ports:
-      - "80:80"      
-      - "8080:8080" 
+      - "80:80"
+      - "8080:8080"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - go-backend
     networks:
-      - traefik
+      - proxynet
+    
   frontend:
     build:
       context: ./dish-dash-frontend
@@ -28,32 +34,32 @@ services:
     ports:
       - "3000:3000"
     networks:
-      - traefik
+      - proxynet
+      
   go-backend:
     build:
       context: ./dishdash-server
       dockerfile: Dockerfile
     container_name: go-backend
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.go-backend.entrypoints=web"
-      - "traefik.http.routers.go-backend.rule=PathPrefix(`/api`)"
-      - "traefik.http.services.go-backend.loadbalancer.server.port=8000"
-      - "traefik.http.routers.go-backend.priority=10"
-    ports:
-      - "8000:8000"
     depends_on:
       - database
     restart: unless-stopped
     env_file:
       - .env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.go-backend.rule=PathPrefix(`/api`)"
+      - "traefik.http.services.go-backend.loadbalancer.server.port=80"
+    networks:
+      - proxynet
+      - database
 
   database:
     restart: unless-stopped
     image: postgres:15
     container_name: database
     volumes:
-      - ./dishdash-server/migrations:/docker-entrypoint-initdb.d
+      - ./migrations:/docker-entrypoint-initdb.d
       - ~/.pg/dishdash-db:/var/lib/postgresql/data
     env_file:
       - .env
@@ -64,6 +70,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - database
 
   adminer:
     image: adminer
@@ -75,7 +83,12 @@ services:
       - "1000:8080"
     depends_on:
       - database
-      
+    networks:
+      - database
+  
 
 networks:
-  traefik:
+  proxynet:
+    name: proxynet
+    external: true
+  database:

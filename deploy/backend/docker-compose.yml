@@ -3,21 +3,21 @@ version: "3.8"
 services:
   go-backend:
     build:
-      context: .
+      context: ./dishdash-server
       dockerfile: Dockerfile
     container_name: go-backend
-    ports:
-      - "8000:8000"
     depends_on:
       - database
     restart: unless-stopped
     env_file:
       - .env
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.go-backend.rule=PathPrefix(`/api`)"
+      - "traefik.http.services.go-backend.loadbalancer.server.port=80"
+    networks:
+      - proxynet
+      - database
 
   database:
     restart: unless-stopped
@@ -35,6 +35,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - database
 
   adminer:
     image: adminer
@@ -46,3 +48,11 @@ services:
       - "1000:8080"
     depends_on:
       - database
+    networks:
+      - database
+
+networks:
+  proxynet:
+    name: proxynet
+    external: true
+  database:
