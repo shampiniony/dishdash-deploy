@@ -13,14 +13,11 @@ services:
       - .env
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.go-backend.rule=Host(`dishdash.ru`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.go-backend.entrypoints=https"
-      - "traefik.http.routers.go-backend.tls.certresolver=le"
+      - "traefik.http.routers.go-backend.entrypoints=https"  
+      - "traefik.http.routers.go-backend.rule=Host(`dishdash.ru`) && PathPrefix(`/api`)"  
+      - "traefik.http.routers.go-backend.tls.certresolver=le" 
       - "traefik.http.services.go-backend.loadbalancer.server.port=80"
-      - "traefik.http.routers.go-backend-ws.rule=Host(`dishdash.ru`) && PathPrefix(`/socket.io`)"
-      - "traefik.http.routers.go-backend-ws.entrypoints=https"
-      - "traefik.http.routers.go-backend-ws.tls.certresolver=le"
-      - "traefik.http.services.go-backend-ws.loadbalancer.server.port=80"
+      - "traefik.http.services.go-backend.loadbalancer.server.scheme=ws"
     networks:
       - proxynet
       - database
